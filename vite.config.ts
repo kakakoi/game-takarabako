@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: './', // GitHub Pagesでの相対パスを使用
+  base: '/game-takarabako/', // リポジトリ名を正確に指定
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
