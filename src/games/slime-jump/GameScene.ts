@@ -116,6 +116,18 @@ export class GameScene implements Scene {
     if (this.isMobileDevice()) {
       // 自動前進（右に移動）
       this.player.setVelocityX(this.player.getMoveSpeed() * 0.7); // 少し遅めに移動
+      
+      // 戻るボタンのタッチ判定
+      if (input.isKeyJustPressed(Key.TOUCH_JUMP)) {
+        const touchX = input.getTouchX();
+        const touchY = input.getTouchY();
+        
+        // 戻るボタンの領域をチェック
+        if (touchX >= 10 && touchX <= 110 && touchY >= 30 && touchY <= 70) {
+          this.backToMenuRequested = true;
+          return;
+        }
+      }
     }
     
     // タッチ入力の処理（ジャンプのみ）
@@ -298,6 +310,16 @@ export class GameScene implements Scene {
       ctx.font = '14px Arial';
       ctx.textAlign = 'left';
       ctx.fillText('ESC: メニューに戻る', 10, 20);
+      
+      // モバイルデバイス用の戻るボタン
+      if (this.isMobileDevice()) {
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+        ctx.fillRect(10, 30, 100, 40);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '18px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('戻る', 60, 55);
+      }
     }
   }
   

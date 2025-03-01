@@ -18,6 +18,9 @@ export class Input {
   private keys: Map<string, boolean> = new Map();
   private keysPressed: Map<string, boolean> = new Map();
   private keysReleased: Map<string, boolean> = new Map();
+  private touchX: number = 0;
+  private touchY: number = 0;
+  private canvas: HTMLCanvasElement | null = null;
 
   private constructor() {
     window.addEventListener('keydown', (e) => this.onKeyDown(e));
@@ -36,8 +39,18 @@ export class Input {
   }
 
   // キャンバス要素を設定するメソッド
-  public setCanvas(_canvas: HTMLCanvasElement): void {
-    // キャンバスは現在使用していないが、将来の拡張のために残しておく
+  public setCanvas(canvas: HTMLCanvasElement): void {
+    this.canvas = canvas;
+  }
+
+  // タッチX座標を取得
+  public getTouchX(): number {
+    return this.touchX;
+  }
+
+  // タッチY座標を取得
+  public getTouchY(): number {
+    return this.touchY;
   }
 
   private onKeyDown(e: KeyboardEvent): void {
@@ -56,6 +69,18 @@ export class Input {
   private onTouchStart(e: TouchEvent): void {
     e.preventDefault();
     if (e.touches.length > 0) {
+      const touch = e.touches[0];
+      
+      // タッチ座標を保存
+      if (this.canvas) {
+        const rect = this.canvas.getBoundingClientRect();
+        this.touchX = touch.clientX - rect.left;
+        this.touchY = touch.clientY - rect.top;
+      } else {
+        this.touchX = touch.clientX;
+        this.touchY = touch.clientY;
+      }
+      
       // ゲームの状態に応じてジャンプまたはリトライ
       this.simulateKey(Key.TOUCH_JUMP, true);
       this.simulateKey(Key.TOUCH_RETRY, true);
