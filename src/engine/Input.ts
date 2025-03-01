@@ -4,7 +4,9 @@ export enum Key {
   UP = 'ArrowUp',
   DOWN = 'ArrowDown',
   SPACE = ' ',
+  ENTER = 'Enter',
   R = 'r',
+  ESCAPE = 'Escape',
   ESC = 'Escape',
   // 仮想タッチキー
   TOUCH_JUMP = 'TOUCH_JUMP',
@@ -92,6 +94,11 @@ export class Input {
 
   public isKeyReleased(key: string): boolean {
     return !!this.keysReleased.get(key);
+  }
+
+  // 新しく追加: キーが今フレームで押されたかどうか
+  public isKeyJustPressed(key: string): boolean {
+    return !!this.keysPressed.get(key);
   }
 
   public update(): void {

@@ -1,5 +1,7 @@
 import { Scene, Game } from '../../engine/Game';
 import { Input, Key } from '../../engine/Input';
+import { initRunningManGame } from "../running-man";
+// import { initSlimeJumpGame } from "../slime-jump";
 
 interface GameOption {
   title: string;
@@ -11,8 +13,13 @@ export class MenuScene implements Scene {
   private game: Game | null = null;
   private gameOptions: GameOption[] = [];
   private selectedIndex: number = 0;
+  private cleanupFunction: (() => void) | null = null;
+  private input: Input;
 
   constructor() {
+    // 入力インスタンスを取得
+    this.input = Input.getInstance();
+    
     // ゲームオプションの設定
     this.gameOptions = [
       {
@@ -20,37 +27,66 @@ export class MenuScene implements Scene {
         description: '宝箱を目指して障害物を避けながらジャンプするゲーム',
         sceneName: 'slime-jump'
       },
+      {
+        title: '走る男',
+        description: '橋の上を進みながら人を集めていくアクションゲーム',
+        sceneName: 'running-man'
+      },
       // 将来的に他のゲームを追加する場合はここに追加
     ];
+    
+    console.log('MenuScene initialized with options:', this.gameOptions.length);
   }
 
   public init(game: Game): void {
     this.game = game;
     this.selectedIndex = 0;
+    console.log('MenuScene init with game:', game);
   }
 
-  public update(_deltaTime: number): void {
-    const input = Input.getInstance();
+  public update(deltaTime: number): void {
+    // 現在のゲームがある場合、そのゲームの更新は行わない
+    if (this.cleanupFunction) {
+      // ESCキーでメニューに戻る
+      if (this.input.isKeyJustPressed(Key.ESCAPE) || this.input.isKeyJustPressed(Key.ESC)) {
+        console.log('ESC pressed, returning to menu');
+        this.cleanupFunction();
+        this.cleanupFunction = null;
+      }
+      return;
+    }
 
     // 上下キーで選択を変更
-    if (input.isKeyPressed(Key.UP) && this.selectedIndex > 0) {
-      this.selectedIndex--;
+    if (this.input.isKeyJustPressed(Key.UP)) {
+      console.log('UP pressed');
+      this.selectedIndex = (this.selectedIndex - 1 + this.gameOptions.length) % this.gameOptions.length;
     }
-    if (input.isKeyPressed(Key.DOWN) && this.selectedIndex < this.gameOptions.length - 1) {
-      this.selectedIndex++;
+    if (this.input.isKeyJustPressed(Key.DOWN)) {
+      console.log('DOWN pressed');
+      this.selectedIndex = (this.selectedIndex + 1) % this.gameOptions.length;
     }
 
-    // スペースキーまたはタッチで選択したゲームを開始
-    if (input.isKeyPressed(Key.SPACE) || input.isKeyPressed(Key.TOUCH_JUMP)) {
+    // スペースキーまたはエンターキーで選択したゲームを開始
+    if (this.input.isKeyJustPressed(Key.ENTER) || this.input.isKeyJustPressed(Key.SPACE)) {
+      console.log('ENTER/SPACE pressed, starting game');
       this.startSelectedGame();
     }
 
-    // 入力の更新
-    input.update();
+    // タッチ入力の処理
+    if (this.input.isKeyJustPressed(Key.TOUCH_JUMP) || this.input.isKeyJustPressed(Key.TOUCH_RETRY)) {
+      console.log('Touch detected, starting game');
+      this.startSelectedGame();
+    }
+    
+    // 入力状態の更新
+    this.input.update();
   }
 
   public render(ctx: CanvasRenderingContext2D): void {
     if (!this.game) return;
+    
+    // 現在のゲームがある場合、メニューは描画しない
+    if (this.cleanupFunction) return;
 
     const canvas = this.game.getCanvas();
     
@@ -97,7 +133,7 @@ export class MenuScene implements Scene {
     if (this.isMobileDevice()) {
       ctx.fillText('タップでゲームを選択', canvas.width / 2, canvas.height - 50);
     } else {
-      ctx.fillText('↑↓キーで選択、スペースキーで決定', canvas.width / 2, canvas.height - 50);
+      ctx.fillText('↑↓キーで選択、スペースキーまたはEnterキーで決定', canvas.width / 2, canvas.height - 50);
     }
   }
   
@@ -105,6 +141,7 @@ export class MenuScene implements Scene {
     if (!this.game) return;
     
     const selectedOption = this.gameOptions[this.selectedIndex];
+    console.log('Starting game:', selectedOption.title);
     
     // 選択されたゲームに応じてシーンを切り替え
     if (selectedOption.sceneName === 'slime-jump') {
@@ -117,6 +154,13 @@ export class MenuScene implements Scene {
       }).catch(error => {
         console.error('ゲームシーンの読み込みに失敗しました:', error);
       });
+    } else if (selectedOption.sceneName === 'running-man') {
+      try {
+        this.cleanupFunction = initRunningManGame(this.game.getCanvas());
+        console.log('Running Man game started');
+      } catch (error) {
+        console.error('Running Man game failed to start:', error);
+      }
     }
     // 将来的に他のゲームを追加する場合はここに条件分岐を追加
   }
