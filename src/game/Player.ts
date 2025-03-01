@@ -163,6 +163,22 @@ export class Player extends GameObject {
     this.velocity.y = y;
   }
 
+  public setVelocityX(x: number): void {
+    this.velocity.x = x;
+  }
+
+  public getMoveSpeed(): number {
+    return this.moveSpeed;
+  }
+
+  public jump(): void {
+    if (this.isOnGround) {
+      this.velocity.y = this.jumpForce;
+      this.isJumping = true;
+      this.isOnGround = false;
+    }
+  }
+
   public setOnGround(isOnGround: boolean): void {
     this.isOnGround = isOnGround;
     if (isOnGround) {
