@@ -10,9 +10,10 @@ export class Player extends GameObject {
   private moveSpeed: number;
   private gravity: number;
   private groundY: number;
+  private animationTime: number = 0; // アニメーション用の時間
 
   constructor(x: number, y: number, width: number, height: number, groundY: number) {
-    super(x, y, width, height, '#3498db'); // 青色のプレイヤー
+    super(x, y, width, height, '#66cdaa'); // ミントグリーン色のスライム
     this.velocity = { x: 0, y: 0 };
     this.isJumping = false;
     this.isOnGround = true; // 初期状態では地面に接地している
@@ -24,6 +25,9 @@ export class Player extends GameObject {
 
   public update(deltaTime: number): void {
     const input = Input.getInstance();
+    
+    // アニメーション時間の更新
+    this.animationTime += deltaTime;
     
     // 左右移動
     this.velocity.x = 0;
@@ -62,6 +66,91 @@ export class Player extends GameObject {
     }
   }
 
+  public render(ctx: CanvasRenderingContext2D): void {
+    // スライムの体（半円）
+    ctx.fillStyle = this.color;
+    
+    // ジャンプ中は少し縦長に、着地時は少し横長に
+    let squishFactor = 1.0;
+    if (this.isJumping) {
+      squishFactor = 1.1; // 縦長
+    } else if (this.isOnGround) {
+      squishFactor = 0.9 + 0.1 * Math.sin(this.animationTime * 5); // 着地時は少し上下に動く
+    }
+    
+    const centerX = this.x + this.width / 2;
+    const centerY = this.y + this.height / 2;
+    const radiusX = this.width / 2;
+    const radiusY = this.height / 2 * squishFactor;
+    
+    // スライムの体を描画
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // スライムの目（2つ）
+    ctx.fillStyle = '#ffffff'; // 白目
+    const eyeRadius = this.width / 8;
+    const eyeOffsetX = this.width / 5;
+    const eyeOffsetY = -this.height / 8;
+    
+    // 左目
+    ctx.beginPath();
+    ctx.arc(centerX - eyeOffsetX, centerY + eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // 右目
+    ctx.beginPath();
+    ctx.arc(centerX + eyeOffsetX, centerY + eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // 瞳（黒目）
+    ctx.fillStyle = '#000000';
+    const pupilRadius = eyeRadius / 2;
+    
+    // 移動方向によって瞳の位置を変える
+    let pupilOffsetX = 0;
+    if (this.velocity.x > 0) {
+      pupilOffsetX = pupilRadius / 2; // 右を向く
+    } else if (this.velocity.x < 0) {
+      pupilOffsetX = -pupilRadius / 2; // 左を向く
+    }
+    
+    // 左瞳
+    ctx.beginPath();
+    ctx.arc(centerX - eyeOffsetX + pupilOffsetX, centerY + eyeOffsetY, pupilRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // 右瞳
+    ctx.beginPath();
+    ctx.arc(centerX + eyeOffsetX + pupilOffsetX, centerY + eyeOffsetY, pupilRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // 猫口（ω）の追加
+    const mouthY = centerY + this.height / 5;
+    const mouthWidth = this.width / 4;
+    const mouthHeight = this.height / 10;
+    
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    
+    // 「ω」の形を描画
+    ctx.moveTo(centerX - mouthWidth / 2, mouthY - mouthHeight / 3);
+    ctx.bezierCurveTo(
+      centerX - mouthWidth / 4, mouthY + mouthHeight / 2,
+      centerX, mouthY - mouthHeight / 4,
+      centerX, mouthY
+    );
+    ctx.bezierCurveTo(
+      centerX, mouthY - mouthHeight / 4,
+      centerX + mouthWidth / 4, mouthY + mouthHeight / 2,
+      centerX + mouthWidth / 2, mouthY - mouthHeight / 3
+    );
+    
+    ctx.stroke();
+  }
+
   public isJumpingState(): boolean {
     return this.isJumping;
   }
@@ -92,5 +181,6 @@ export class Player extends GameObject {
     this.velocity.y = 0;
     this.isJumping = false;
     this.isOnGround = true; // リセット時は地面に接地している
+    this.animationTime = 0;
   }
 } 
