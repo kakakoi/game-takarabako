@@ -48,6 +48,7 @@ export class MenuScene implements Scene {
     // タッチイベントを追加
     if (this.isMobileDevice()) {
       this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this));
+      // this.canvas.addEventListener('touchend', this.handleTouchEnd.bind(this)); // タッチ終了時のイベントを削除
     }
   }
 
@@ -213,6 +214,7 @@ export class MenuScene implements Scene {
     // タッチイベントリスナーを削除
     if (this.canvas && this.isMobileDevice()) {
       this.canvas.removeEventListener('touchstart', this.handleTouchStart.bind(this));
+      // this.canvas.removeEventListener('touchend', this.handleTouchEnd.bind(this)); // タッチ終了時のイベントを削除
     }
   }
 } 
