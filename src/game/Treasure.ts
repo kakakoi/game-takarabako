@@ -5,7 +5,7 @@ export class Treasure extends GameObject {
     super(x, y, width, height, '#f1c40f'); // 黄色の宝箱
   }
 
-  public update(deltaTime: number): void {
+  public update(_deltaTime: number): void {
     // 宝箱は静的なので何もしない
   }
 
