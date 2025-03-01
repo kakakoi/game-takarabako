@@ -37,6 +37,9 @@ export class GameScene implements Scene {
     const canvas = game.getCanvas();
     const groundY = canvas.height - 50;
     
+    // キャンバスをInputクラスに設定（タッチ操作用）
+    Input.getInstance().setCanvas(canvas);
+    
     // プレイヤーの作成
     this.player = new Player(50, groundY - 40, 30, 40, groundY);
     
@@ -72,35 +75,39 @@ export class GameScene implements Scene {
   public update(deltaTime: number): void {
     const input = Input.getInstance();
     
-    if (this.gameState !== GameState.PLAYING) {
-      // リトライキーが離されたことを確認
-      if (!input.isKeyDown(Key.SPACE) && !input.isKeyDown(Key.UP) && !input.isKeyDown(Key.R)) {
-        this.retryKeyReleased = true;
-      }
-      
-      // リトライ（Rキー、スペースキー、上矢印キーのいずれかで可能）
-      if (this.retryKeyReleased && (input.isKeyPressed(Key.R) || input.isKeyPressed(Key.SPACE) || input.isKeyPressed(Key.UP))) {
-        this.gameState = GameState.PLAYING;
+    // ゲームオーバー時のリトライ処理
+    if (this.gameState === GameState.GAME_OVER || this.gameState === GameState.GAME_CLEAR) {
+      // スペースキー、上矢印キー、またはタッチリトライでリトライ
+      if ((input.isKeyPressed(Key.SPACE) || input.isKeyPressed(Key.UP) || input.isKeyPressed(Key.R) || 
+           input.isKeyPressed(Key.TOUCH_RETRY)) && this.retryKeyReleased) {
         this.reset();
-        input.update();
         return;
       }
       
-      // ESCキーでゲームを一時停止
-      if (input.isKeyPressed(Key.ESC)) {
-        if (this.game) {
-          this.game.stop();
-        }
+      // リトライキーが離されたかどうかを更新
+      if (input.isKeyReleased(Key.SPACE) || input.isKeyReleased(Key.UP) || input.isKeyReleased(Key.R) || 
+          input.isKeyReleased(Key.TOUCH_RETRY)) {
+        this.retryKeyReleased = true;
       }
       
-      input.update();
       return;
     }
     
-    if (!this.player || !this.game) return;
+    if (!this.player) return;
     
-    // プレイヤーの更新（入力処理と物理演算）
+    // プレイヤーの更新
     this.player.update(deltaTime);
+    
+    // モバイルデバイスの場合は自動前進
+    if (this.isMobileDevice()) {
+      // 自動前進（右に移動）
+      this.player.setVelocityX(this.player.getMoveSpeed() * 0.7); // 少し遅めに移動
+    }
+    
+    // タッチ入力の処理（ジャンプのみ）
+    if (input.isKeyPressed(Key.TOUCH_JUMP) && this.player.isOnGroundState()) {
+      this.player.jump();
+    }
     
     // プレイヤーが地面に接地しているかどうかのフラグ
     let isOnAnyGround = false;
@@ -148,7 +155,7 @@ export class GameScene implements Scene {
     }
     
     // 画面外に落下した場合
-    if (this.player.getY() > this.game.getCanvas().height) {
+    if (this.player && this.game && this.player.getY() > this.game.getCanvas().height) {
       this.gameState = GameState.GAME_OVER;
       this.endTime = performance.now();
       this.retryKeyReleased = false; // リトライキーが押されていることを記録
@@ -170,7 +177,7 @@ export class GameScene implements Scene {
     }
     
     // ゴールが近づいたらプレイヤーを自動で前進させる
-    if (this.treasure && this.cameraX > this.levelWidth - this.game.getCanvas().width - 100) {
+    if (this.treasure && this.game && this.cameraX > this.levelWidth - this.game.getCanvas().width - 100) {
       // プレイヤーを自動で右に移動
       const newX = this.player.getX() + this.autoMoveSpeed * deltaTime;
       this.player.setPosition(newX, this.player.getY());
@@ -181,7 +188,7 @@ export class GameScene implements Scene {
   }
 
   public render(ctx: CanvasRenderingContext2D): void {
-    if (!this.game) return;
+    if (!this.game || !this.player) return;
     
     const canvas = this.game.getCanvas();
     
@@ -189,7 +196,7 @@ export class GameScene implements Scene {
     ctx.fillStyle = '#87CEEB'; // 空色
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // カメラの適用
+    // カメラの位置を設定
     ctx.save();
     ctx.translate(-this.cameraX, 0);
     
@@ -209,11 +216,19 @@ export class GameScene implements Scene {
     }
     
     // プレイヤーの描画
-    if (this.player) {
-      this.player.render(ctx);
-    }
+    this.player.render(ctx);
     
     ctx.restore();
+    
+    // UIの描画
+    this.renderUI(ctx);
+  }
+  
+  // UIの描画
+  private renderUI(ctx: CanvasRenderingContext2D): void {
+    if (!this.game) return;
+    
+    const canvas = this.game.getCanvas();
     
     // ゲームオーバー画面
     if (this.gameState === GameState.GAME_OVER) {
@@ -226,7 +241,11 @@ export class GameScene implements Scene {
       ctx.fillText('ゲームオーバー', canvas.width / 2, canvas.height / 2 - 40);
       
       ctx.font = '24px Arial';
-      ctx.fillText('スペースキーでリトライ', canvas.width / 2, canvas.height / 2 + 20);
+      if (this.isMobileDevice()) {
+        ctx.fillText('画面をタップしてリトライ', canvas.width / 2, canvas.height / 2 + 20);
+      } else {
+        ctx.fillText('スペースキーでリトライ', canvas.width / 2, canvas.height / 2 + 20);
+      }
     }
     
     // ゲームクリア画面
@@ -244,8 +263,17 @@ export class GameScene implements Scene {
       ctx.font = '24px Arial';
       ctx.fillText(`クリア時間: ${elapsedTime.toFixed(2)}秒`, canvas.width / 2, canvas.height / 2);
       
-      ctx.fillText('スペースキーでリトライ', canvas.width / 2, canvas.height / 2 + 40);
+      if (this.isMobileDevice()) {
+        ctx.fillText('画面をタップしてリトライ', canvas.width / 2, canvas.height / 2 + 40);
+      } else {
+        ctx.fillText('スペースキーでリトライ', canvas.width / 2, canvas.height / 2 + 40);
+      }
     }
+  }
+  
+  // モバイルデバイスかどうかを判定
+  private isMobileDevice(): boolean {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   }
 
   private reset(): void {
