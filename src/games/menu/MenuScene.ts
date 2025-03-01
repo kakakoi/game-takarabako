@@ -15,6 +15,7 @@ export class MenuScene implements Scene {
   private selectedIndex: number = 0;
   private cleanupFunction: (() => void) | null = null;
   private input: Input;
+  private canvas: HTMLCanvasElement | null = null;
 
   constructor() {
     // 入力インスタンスを取得
@@ -41,7 +42,13 @@ export class MenuScene implements Scene {
   public init(game: Game): void {
     this.game = game;
     this.selectedIndex = 0;
+    this.canvas = game.getCanvas();
     console.log('MenuScene init with game:', game);
+    
+    // タッチイベントを追加
+    if (this.isMobileDevice()) {
+      this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this));
+    }
   }
 
   public update(deltaTime: number): void {
@@ -169,5 +176,43 @@ export class MenuScene implements Scene {
   // モバイルデバイスかどうかを判定
   private isMobileDevice(): boolean {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }
+
+  // タッチイベントハンドラ
+  private handleTouchStart(e: TouchEvent): void {
+    if (this.cleanupFunction || !this.canvas) return;
+    
+    e.preventDefault();
+    
+    if (e.touches.length > 0) {
+      const touch = e.touches[0];
+      const rect = this.canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      
+      // ゲームオプションの領域をチェック
+      const startY = 150;
+      const optionHeight = 100;
+      
+      for (let i = 0; i < this.gameOptions.length; i++) {
+        const optionY = startY + i * optionHeight;
+        
+        // タップした位置がオプション領域内かチェック
+        if (y >= optionY - 30 && y <= optionY + optionHeight - 40 && 
+            x >= 50 && x <= this.canvas.width - 50) {
+          this.selectedIndex = i;
+          console.log('Selected game via touch:', this.gameOptions[i].title);
+          this.startSelectedGame();
+          break;
+        }
+      }
+    }
+  }
+
+  public dispose(): void {
+    // タッチイベントリスナーを削除
+    if (this.canvas && this.isMobileDevice()) {
+      this.canvas.removeEventListener('touchstart', this.handleTouchStart.bind(this));
+    }
   }
 } 
