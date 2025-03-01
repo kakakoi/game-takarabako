@@ -132,7 +132,14 @@ export class GameScene implements Scene {
     
     // タッチ入力の処理（ジャンプのみ）
     if (input.isKeyPressed(Key.TOUCH_JUMP) && this.player.isOnGroundState()) {
-      this.player.jump();
+      // 戻るボタンの領域外のタッチのみジャンプとして処理
+      const touchX = input.getTouchX();
+      const touchY = input.getTouchY();
+      
+      // 戻るボタンの領域でなければジャンプ
+      if (!(touchX >= 10 && touchX <= 110 && touchY >= 30 && touchY <= 70)) {
+        this.player.jump();
+      }
     }
     
     // プレイヤーが地面に接地しているかどうかのフラグ
