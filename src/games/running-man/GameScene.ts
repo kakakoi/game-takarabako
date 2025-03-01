@@ -36,6 +36,7 @@ export class GameScene {
   private lastTime: number = 0;
   private uiElement: HTMLElement | null = null;
   private handleResize: () => void;
+  private isRunning: boolean = true;
   
   constructor(canvas: HTMLCanvasElement) {
     // レンダラーの設定

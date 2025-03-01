@@ -45,6 +45,7 @@ export class MenuScene implements Scene {
   }
 
   public update(deltaTime: number): void {
+    // deltaTimeは将来的なアニメーションのために保持
     // 現在のゲームがある場合、そのゲームの更新は行わない
     if (this.cleanupFunction) {
       // ESCキーでメニューに戻る

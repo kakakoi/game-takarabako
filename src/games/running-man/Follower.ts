@@ -10,7 +10,6 @@ export enum FollowerType {
 export class Follower {
   private model: THREE.Group;
   private position: THREE.Vector3;
-  private targetPosition: THREE.Vector3;
   private type: FollowerType;
   private value: number;
   private speed: number = 6;
@@ -18,7 +17,6 @@ export class Follower {
   
   constructor(scene: THREE.Scene, position: THREE.Vector3, type: FollowerType = FollowerType.NORMAL, value: number = 1) {
     this.position = position.clone();
-    this.targetPosition = position.clone();
     this.type = type;
     this.value = value;
     
