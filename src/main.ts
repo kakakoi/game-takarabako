@@ -1,6 +1,6 @@
 import './style.css'
 import { Game } from './engine/Game'
-import { GameScene } from './game/GameScene'
+import { MenuScene } from './games/menu/MenuScene'
 
 // DOMContentLoadedイベントでゲームを初期化
 document.addEventListener('DOMContentLoaded', () => {
@@ -8,9 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // ゲームインスタンスの作成
     const game = new Game('game-canvas')
     
-    // ゲームシーンの作成と設定
-    const gameScene = new GameScene()
-    game.setScene(gameScene)
+    // メニューシーンの作成と設定
+    const menuScene = new MenuScene()
+    game.setScene(menuScene)
     
     // ゲームの開始
     game.start()
