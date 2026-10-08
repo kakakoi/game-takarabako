@@ -5,7 +5,7 @@ export class Trap extends GameObject {
     super(x, y, width, height, '#e74c3c'); // 赤色のトラップ
   }
 
-  public update(deltaTime: number): void {
+  public update(_deltaTime: number): void {
     // トラップは静的なので何もしない
   }
 } 
