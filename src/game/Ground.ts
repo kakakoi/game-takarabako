@@ -5,7 +5,7 @@ export class Ground extends GameObject {
     super(x, y, width, height, '#27ae60'); // 緑色の地面
   }
 
-  public update(deltaTime: number): void {
+  public update(_deltaTime: number): void {
     // 地面は静的なので何もしない
   }
 } 
